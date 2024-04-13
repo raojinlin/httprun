@@ -1,0 +1,13 @@
+{
+    "api_path": "/api/v1/list",
+    "command": "ls {{ .target }}",
+    "params": [
+        {
+            "name": "target",
+            "type": "string"
+        }
+    ],
+    "env": {
+        "PATH": "/usr/bin/"
+    }
+}
