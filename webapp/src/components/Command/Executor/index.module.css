@@ -1,0 +1,25 @@
+.envNameInput {
+    width: 200px;
+    margin-right: 10px;
+}
+
+/* .envValueInput {
+} */
+
+.closeIcon {
+    color: rgb(0, 0, 0, .35);
+    margin-left: 10px;
+}
+
+.closeIcon:hover {
+    color: rgb(0, 0, 0, .45);
+}
+
+.btn {
+    padding: 0;
+}
+
+:global(.ant-list-item-meta-description) {
+    padding-right: 10px;
+    word-break: break-all;
+}

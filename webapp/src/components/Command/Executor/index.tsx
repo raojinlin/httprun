@@ -1,12 +1,12 @@
 import React from "react";
-import { Alert, Button, Checkbox, Form, Input, List, Modal, Typography, message } from "antd";
-import { EditorProps } from "./type";
+import { Alert, Checkbox, Form, Input, List, Modal, Typography, message } from "antd";
+import { ExecutorProps } from "./type";
 import FormItem from "antd/es/form/FormItem";
 import commandService from "../../../services/command";
 import { CommandOutputResponse, Param } from "../../../services/type";
 
 
-const Editor: React.FC<EditorProps> = ({ open, command, onClose }) => {
+const Executor: React.FC<ExecutorProps> = ({ open, command, onClose }) => {
     const [form] = Form.useForm();
     const [running, setRunning] = React.useState(false);
     const [result, setResult] = React.useState<CommandOutputResponse>();
@@ -50,14 +50,21 @@ const Editor: React.FC<EditorProps> = ({ open, command, onClose }) => {
         });
         return val;
     }, [command]);
+
     return (
-        <Modal open={open} title={'编辑命令 - ' + command.name} onCancel={onClose}>
+        <Modal
+            open={open} 
+            title={'运行命令 - ' + command.name} 
+            onCancel={onClose} 
+            cancelText={'关闭'}
+            okText={<>运行</>}
+            okButtonProps={{onClick: handleRun, loading: running}}
+        >
             <Typography style={{marginBottom: '15px', color: 'rgb(0, 0, 0, 0.45)'}}>{command.description}</Typography>
             <Typography>参数列表</Typography>
-            <Form form={form} onSubmitCapture={handleRun} initialValues={initialValues}>
-                <List 
-                    dataSource={command.command.params} 
-                    renderItem={item => {
+            <Form form={form} initialValues={initialValues}>
+                <List>
+                    {(command.command.params).map(item => {
                         return (
                             <List.Item>
                                 <List.Item.Meta 
@@ -68,24 +75,22 @@ const Editor: React.FC<EditorProps> = ({ open, command, onClose }) => {
                                     name={item.name}
                                     rules={[{required: item.required}]}
                                     valuePropName={item.type === 'bool' ? 'checked' : 'value'}
+                                    style={{alignSelf: 'baseline'}}
                                 >
                                     {item.type === 'bool' ? <Checkbox /> : <Input type="text" />}
                                 </FormItem>
                             </List.Item>
                         )
-                    }}
-                />
-                <FormItem>
-                    <Button loading={running} htmlType="submit">运行命令</Button>
-                </FormItem>
+                    })}
+                </List>
             </Form>
             <div>
                 {result?.error ? <Alert type="error" message={`${result.error}. ${result.stderr}`} /> : null}
-                <pre style={{maxHeight: '500px', overflow: 'auto'}}>{result?.stdout}</pre>
+                <pre style={{maxHeight: '300px', overflow: 'auto'}}>{result?.stdout}</pre>
             </div>
         </Modal>
     );
 }
 
 
-export default Editor;
+export default Executor;

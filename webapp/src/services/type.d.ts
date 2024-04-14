@@ -19,7 +19,7 @@ export type Environment = {
 export type Command = {
     command: string;
     params: ParamDefine[];
-    env: Environment[];
+    envs: Environment[];
 };
 
 export type CommandStatus = number;

@@ -1,1 +1,3 @@
-export type CommandListProps = {}
+export type CommandListProps = {
+    admin?: boolean;
+}
