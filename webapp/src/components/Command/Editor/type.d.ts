@@ -1,16 +1,7 @@
-import { ParamDefine, CommandItem } from "../../../services/type";
-
+import { CommandItem } from '../../../services/type';
 export type EditorProps = {
-    open: boolean;
-    command: CommandItem;
+    open?: boolean;
     onClose?: () => void;
-    action?: "edit"|"run";
-};
-
-export type ParamInputProps = {
-    param: ParamDefine
-    name: string;
-    value?: any;
-    checked?: boolean;
+    command: CommandItem;
     onChange?: () => void;
 };

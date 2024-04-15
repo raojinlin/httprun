@@ -1,0 +1,15 @@
+.basicLayout {
+    width: 80%;
+    margin: auto;
+    background-color: #fff;
+}
+
+.title {
+    font-size: 20px;
+    font-weight: 500;
+}
+
+:global(.ant-layout-header) {
+    background-color: #fff;
+    padding: 0;
+}

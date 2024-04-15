@@ -25,14 +25,19 @@ export type Command = {
 export type CommandStatus = number;
 
 export type CommandItem =     {
-    id: number,
-    command: Command,
-    name: string,
-    status: CommandStatus,
-    description: string,
-    created_at: string,
-    updated_at: string
+    id: number;
+    command: Command;
+    path: string;
+    name: string;
+    status: CommandStatus;
+    description: string;
+    created_at: string;
+    updated_at: string;
 };
+
+export type CreateCommandResponse = {
+    id: number;
+}
 
 
 export type CommandOutputResponse = {
