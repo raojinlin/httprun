@@ -6,6 +6,7 @@ export type ExecutorProps = {
     onClose?: () => void;
     action?: "edit"|"run";
     readonly?: boolean;
+    onChange?: () => void;
 };
 
 export type ParamInputProps = {

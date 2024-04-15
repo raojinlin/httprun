@@ -84,6 +84,13 @@ const Executor: React.FC<ExecutorProps> = ({ open, command, onClose }) => {
                     })}
                 </List>
             </Form>
+            <Typography>环境变量</Typography>
+            <List>
+                {!command.command.env || !command.command.env.length ? <span>None</span> : null}
+                {(command.command.env || []).map(env => {
+                    return <List.Item key={env.name}><List.Item.Meta title={env.name} description={env.value} /></List.Item>
+                })}
+            </List>
             <div>
                 {result?.error ? <Alert type="error" message={`${result.error}. ${result.stderr}`} /> : null}
                 <pre style={{maxHeight: '300px', overflow: 'auto'}}>{result?.stdout}</pre>

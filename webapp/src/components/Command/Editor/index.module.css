@@ -1,0 +1,20 @@
+.inputRow {
+    margin-bottom: 5px;
+}
+
+.closeIcon {
+    color: rgb(0, 0, 0, .35);
+    margin-left: 10px;
+}
+
+.closeIcon:hover {
+    color: rgb(0, 0, 0, .45);
+}
+
+.btn {
+    padding: 0;
+}
+
+.itemName {
+    color: #666;
+}

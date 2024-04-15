@@ -62,7 +62,7 @@ func (s *CommandService) ListCommands() ([]types.ListCommandsResponse, error) {
 }
 
 func (s *CommandService) DeleteCommands(name ...string) {
-	s.db.Where("name in (?)", name).Delete(&models.Command{})
+	s.db.Unscoped().Where("name in (?)", name).Delete(&models.Command{})
 }
 
 func (s *CommandService) UpdateCommandsStatus(status models.CommandStatus, commands ...string) error {
