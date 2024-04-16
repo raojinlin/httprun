@@ -79,7 +79,7 @@ export type TokenListResponse = {
 }
 
 export type CreateTokenRequest = {
-    issuse_at: number;
+    issue_at: number;
     expires_at: number;
     subject: string;
     name: string;

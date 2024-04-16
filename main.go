@@ -112,10 +112,10 @@ func main() {
 			}
 
 			token := &models.Token{
-				Subject:  req.Subject,
-				Name:     req.Name,
-				IssueAt:  req.IssueAt,
-				ExiresAt: req.ExiresAt,
+				Subject:   req.Subject,
+				Name:      req.Name,
+				IssueAt:   req.IssueAt,
+				ExpiresAt: req.ExiresAt,
 			}
 			err = tokenService.AddToken(token)
 

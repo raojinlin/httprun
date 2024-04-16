@@ -2,6 +2,7 @@ import { Form, Modal, Input, DatePicker, Select, message } from "antd";
 import React from "react";
 import commandService from "../../../services/command";
 import { CreateTokenRequest } from "../../../services/type";
+import dayjs from 'dayjs';
 
 
 const AddTokenModal: React.FC = () => {
@@ -10,10 +11,11 @@ const AddTokenModal: React.FC = () => {
     const handleSubmit = React.useCallback(() => {
         form.validateFields().then(() => {
             setLoading(true);
-            form.resetFields();
-            const value = form.getFieldsValue() as CreateTokenRequest;
-            value.issuse_at = parseInt(Date.now() / 1000)
-            commandService.addToken(value).then(() => {
+            const value = form.getFieldsValue();
+            const req = {...value} as CreateTokenRequest;
+            req.issue_at = parseInt(String(Date.now() / 1000))
+            req.expires_at = dayjs(value.expires_at).unix();
+            commandService.addToken(req).then(() => {
                 setLoading(false);
                 message.success('添加成功');
                 form.resetFields();
@@ -22,7 +24,7 @@ const AddTokenModal: React.FC = () => {
                 message.error('添加失败');
             })
         }).catch(err => {
-            message.error(err.message);
+            message.error('请填写参数');
         })
     }, [form]);
     return (
@@ -32,7 +34,8 @@ const AddTokenModal: React.FC = () => {
                     <Input />
                 </Form.Item>
                 <Form.Item label='命令' name='subject' rules={[{required: true}]}>
-                    <Select></Select>
+                    {/* <Select></Select> */}
+                    <Input />
                 </Form.Item>
                 <Form.Item label='ExpiresAt' name='expires_at' rules={[{required: true}]}>
                     <DatePicker showTime />

@@ -22,7 +22,7 @@ func (s *JWTService) GenerateJWT(item *models.Token) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 
 	claims := token.Claims.(jwt.MapClaims)
-	claims["exp"] = item.ExiresAt
+	claims["exp"] = item.ExpiresAt
 	claims["iat"] = item.IssueAt
 
 	claims["sub"] = item.Subject

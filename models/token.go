@@ -8,7 +8,7 @@ type Token struct {
 	Name      string    `json:"name" gorm:"varchar(200)"`
 	IsAdmiin  bool      `json:"is_admiin" gorm:"int(1)"`
 	IssueAt   uint64    `json:"issue_at" gorm:"timestamp"`
-	ExiresAt  uint64    `json:"exires_at" gorm:"timestamp"`
+	ExpiresAt uint64    `json:"expires_at" gorm:"timestamp"`
 	JwtToken  string    `json:"jwt_token" gorm:"text"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`

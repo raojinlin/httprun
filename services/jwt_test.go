@@ -12,10 +12,10 @@ import (
 func TestJWTGenerate(t *testing.T) {
 	service := NewJWTService(nil)
 	ts, err := service.GenerateJWT(&models.Token{
-		IssueAt:  uint64(time.Now().Unix()),
-		ExiresAt: uint64(time.Now().Add(-1 * time.Hour).Unix()),
-		Subject:  "user1",
-		Name:     "user1",
+		IssueAt:   uint64(time.Now().Unix()),
+		ExpiresAt: uint64(time.Now().Add(-1 * time.Hour).Unix()),
+		Subject:   "user1",
+		Name:      "user1",
 	})
 
 	if err != nil {
