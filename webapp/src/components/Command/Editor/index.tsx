@@ -147,10 +147,15 @@ const Editor: React.FC<EditorProps> = ({ open, onClose, command, onChange }) => 
                                 <div className={styles.inputRow}>
                                     <span className={styles.itemName}>默认值：</span>
                                     {param.type === 'bool' 
-                                    ? <Radio.Group name="defaultvalue" value={param.defaultValue ? 'true' : 'false'} onChange={e => handleParamItemChange(i, 'defaultValue', (e.target.value === 'true' ? true : false) as never)}>
+                                    ? (
+                                        <Radio.Group 
+                                            name="defaultvalue" 
+                                            value={param.defaultValue ? 'true' : 'false'} 
+                                            onChange={e => handleParamItemChange(i, 'defaultValue', (e.target.value === 'true' ? true : false) as never)}
+                                        >
                                         <Radio value='true'>是</Radio><Radio value='false'>否</Radio>
                                       </Radio.Group>
-                                    : <Input 
+                                    ): <Input 
                                         type="text" 
                                         value={param.defaultValue as string} 
                                         onChange={e => handleParamItemChange(i, 'defaultValue', e.target.value as never)} 

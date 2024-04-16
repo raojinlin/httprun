@@ -1,45 +1,32 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	"log"
-	"os"
+	"strconv"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/raojinlin/httprun/models"
 	"github.com/raojinlin/httprun/services"
 	"github.com/raojinlin/httprun/types"
+	"github.com/raojinlin/httprun/utils"
 	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 func main() {
-	newLogger := logger.New(
-		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
-		logger.Config{
-			SlowThreshold:             time.Second, // Slow SQL threshold
-			LogLevel:                  logger.Info, // Log level
-			IgnoreRecordNotFoundError: true,        // Ignore ErrRecordNotFound error for logger
-			ParameterizedQueries:      true,        // Don't include params in the SQL log
-			Colorful:                  false,       // Disable color
-		},
-	)
-	db, err := gorm.Open(sqlite.Open("./test.db"), &gorm.Config{Logger: newLogger})
-	if err != nil {
-		panic(err)
-	}
-
-	err = db.AutoMigrate(&models.Command{})
+	db, err := utils.NewDB(sqlite.Open("./httprun.db"))
 	if err != nil {
 		panic(err)
 	}
 
 	cmdService := services.NewCommandService(db)
+	accesslogService := services.NewAccessLogService(db)
+
 	router := gin.Default()
-	router.POST("/api/run/*path", func(ctx *gin.Context) {
+	runGroup := router.Group("/api/run")
+	runGroup.Use(utils.JwtMiddleware(db))
+	runGroup.POST("/*path", func(ctx *gin.Context) {
 		var request types.RunCommandRequest
 		err := ctx.BindJSON(&request)
 		if err != nil {
@@ -48,6 +35,9 @@ func main() {
 		}
 
 		response := cmdService.RunCommand(&request)
+		reqJson, _ := json.Marshal(request)
+		resJson, _ := json.Marshal(response)
+		utils.RecordAccessLog(accesslogService, ctx, string(reqJson), string(resJson))
 		ctx.JSON(200, response)
 	})
 
@@ -66,6 +56,9 @@ func main() {
 				return
 			}
 
+			reqJson, _ := json.Marshal(cmd)
+			resJson, _ := json.Marshal(result)
+			utils.RecordAccessLog(accesslogService, ctx, string(reqJson), string(resJson))
 			ctx.JSON(200, result)
 		})
 
@@ -76,6 +69,8 @@ func main() {
 				return
 			}
 
+			cmdListJson, _ := json.Marshal(commands)
+			utils.RecordAccessLog(accesslogService, ctx, "", string(cmdListJson))
 			ctx.JSON(200, commands)
 		})
 
@@ -86,6 +81,8 @@ func main() {
 				return
 			}
 
+			reqJson, _ := json.Marshal(req)
+			utils.RecordAccessLog(accesslogService, ctx, string(reqJson), "")
 			cmdService.UpdateCommandsStatus(req.Status, req.Commands...)
 			ctx.JSON(200, gin.H{"success": true})
 		})
@@ -96,8 +93,76 @@ func main() {
 				ctx.AbortWithError(400, fmt.Errorf("name required"))
 				return
 			}
+			utils.RecordAccessLog(accesslogService, ctx, name, "")
 			cmdService.DeleteCommands(strings.Split(name, " ")...)
 			ctx.JSON(200, gin.H{})
+		})
+
+		tokenService := services.NewJWTService(db)
+		adminGroup.GET("/tokens", func(ctx *gin.Context) {
+			ctx.JSON(200, tokenService.List())
+		})
+
+		adminGroup.POST("/token", func(ctx *gin.Context) {
+			var req types.CreateTokenRequest
+			if err := ctx.ShouldBindJSON(&req); err != nil {
+				ctx.AbortWithError(400, err)
+				return
+			}
+
+			token := &models.Token{
+				Subject:  req.Subject,
+				Name:     req.Name,
+				IssueAt:  req.IssueAt,
+				ExiresAt: req.ExiresAt,
+			}
+			err = tokenService.AddToken(token)
+
+			if err != nil {
+				ctx.AbortWithError(500, err)
+				return
+			}
+
+			ctx.JSON(200, types.CreateTokenResponse{Token: token.JwtToken})
+		})
+
+		adminGroup.DELETE("/token/:tokenId", func(ctx *gin.Context) {
+			tokenId, _ := ctx.Params.Get("tokenId")
+			if tokenId == "" {
+				ctx.AbortWithStatus(400)
+				return
+			}
+
+			id, err := strconv.Atoi(tokenId)
+			if err != nil {
+				ctx.AbortWithError(400, err)
+				return
+			}
+
+			err = tokenService.Delete(uint64(id))
+			if err != nil {
+				ctx.AbortWithError(400, err)
+				return
+			}
+
+			ctx.JSON(200, gin.H{"id": id})
+		})
+
+		adminGroup.GET("/accesslog", func(ctx *gin.Context) {
+			pageSizeStr := ctx.Query("pageSize")
+			pageSize, err := strconv.Atoi(pageSizeStr)
+			if err != nil {
+				ctx.AbortWithError(400, err)
+				return
+			}
+			pageIndexStr := ctx.Query("pageIndex")
+			pageIndex, err := strconv.Atoi(pageIndexStr)
+			if err != nil {
+				ctx.AbortWithError(400, err)
+				return
+			}
+
+			ctx.JSON(200, accesslogService.List(pageIndex, pageSize))
 		})
 	}
 

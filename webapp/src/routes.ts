@@ -12,7 +12,15 @@ const router = createBrowserRouter([
             },
             {
                 path: '/admin',
-                Component: React.lazy(() => import('./components/Admin'))
+                Component: React.lazy(() => import('./components/Admin')),
+            },
+            {
+                path: '/admin/accesslog',
+                Component: React.lazy(() => import('./components/Admin/AccessLog')),
+            },
+            {
+                path: '/admin/token',
+                Component: React.lazy(() => import('./components/Admin/TokenList')),
             }
         ]
     }

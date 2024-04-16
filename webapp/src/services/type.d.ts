@@ -45,3 +45,19 @@ export type CommandOutputResponse = {
     stderr: string;
     error: string;
 }
+
+export type AccessLogItem = {
+    id: number;
+    token_id: string;
+    path: string;
+    ip: string;
+    request: string;
+    response: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export type AccessLogListResponse = {
+    items: AccessLogItem[];
+    total: number;
+}
