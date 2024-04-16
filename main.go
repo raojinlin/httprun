@@ -100,7 +100,8 @@ func main() {
 
 		tokenService := services.NewJWTService(db)
 		adminGroup.GET("/tokens", func(ctx *gin.Context) {
-			ctx.JSON(200, tokenService.List())
+			pageIndex, pageSize := utils.ParsePage(ctx)
+			ctx.JSON(200, tokenService.List(pageIndex, pageSize))
 		})
 
 		adminGroup.POST("/token", func(ctx *gin.Context) {
@@ -149,14 +150,7 @@ func main() {
 		})
 
 		adminGroup.GET("/accesslog", func(ctx *gin.Context) {
-			pageSizeStr := ctx.Query("pageSize")
-			pageSize, err := strconv.Atoi(pageSizeStr)
-			if err != nil {
-				ctx.AbortWithError(400, err)
-				return
-			}
-			pageIndexStr := ctx.Query("pageIndex")
-			pageIndex, err := strconv.Atoi(pageIndexStr)
+			pageIndex, pageSize := utils.ParsePage(ctx)
 			if err != nil {
 				ctx.AbortWithError(400, err)
 				return

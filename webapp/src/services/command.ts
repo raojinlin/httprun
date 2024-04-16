@@ -1,4 +1,4 @@
-import { AccessLogListResponse, CommandItem, CommandOutputResponse, CreateCommandResponse, Environment, Param } from "./type";
+import { AccessLogListResponse, CommandItem, CommandOutputResponse, CreateCommandResponse, CreateTokenRequest, Environment, Param, TokenListResponse } from "./type";
 
 export class CommandService {
     async getCommandList(): Promise<CommandItem[]> {
@@ -48,8 +48,23 @@ export class CommandService {
         return await res.json();
     }
 
-    async getTokenList(id: number): Promise<any> {
+    async getTokenList(pageIndex: number, pageSize: number): Promise<TokenListResponse> {
+        const res = await fetch(`/api/admin/tokens?pageIndex=${pageIndex}&pageSize=${pageSize}`);
+        return await res.json();
+    }
 
+    async deleteToken(id: number): Promise<{id: number}> {
+        const res = await fetch(`/api/admin/tokens?id=${id}`, {method: 'DELETE'})
+        return await res.json();
+    }
+
+    async addToken(req: CreateTokenRequest): Promise<{token: string}> {
+        const res = await fetch('/api/admin/token', {
+            method: 'POST',
+            headers: {'content-type': 'application/json'},
+            body: JSON.stringify(req),
+        })
+        return await res.json();
     }
 }
 

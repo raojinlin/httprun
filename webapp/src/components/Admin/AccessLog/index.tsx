@@ -1,7 +1,7 @@
 import React from "react";
 import { AccessLogListResponse } from "../../../services/type";
 import commandService from "../../../services/command";
-import { List, Spin } from "antd";
+import { List } from "antd";
 
 const AccessLog: React.FC = (props) => {
     const [data, setData] = React.useState<AccessLogListResponse>();

@@ -13,3 +13,8 @@ type Token struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
+
+type TokenListResponse struct {
+	Items []Token `json:"items"`
+	Total int64   `json:"total"`
+}

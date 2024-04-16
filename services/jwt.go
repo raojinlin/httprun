@@ -73,10 +73,12 @@ func (s *JWTService) Verify(tokenStr string) error {
 	return nil
 }
 
-func (s *JWTService) List() []models.Token {
+func (s *JWTService) List(pageIndex int, pageSize int) *models.TokenListResponse {
 	var result []models.Token
-	s.db.Model(&models.Token{}).Find(&result)
-	return result
+	s.db.Model(&models.Token{}).Limit(pageSize).Offset((pageIndex - 1) * pageSize).Find(&result)
+	var total int64
+	s.db.Model(&models.Token{}).Count(&total)
+	return &models.TokenListResponse{Items: result, Total: total}
 }
 
 func (s *JWTService) Delete(id uint64) error {

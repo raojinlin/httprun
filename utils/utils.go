@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -76,4 +77,12 @@ func NewDB(dialector gorm.Dialector) (*gorm.DB, error) {
 
 	err = AutoMigrate(db)
 	return db, err
+}
+
+func ParsePage(ctx *gin.Context) (pageIndex int, pageSize int) {
+	pageSizeStr := ctx.Query("pageSize")
+	pageSize, _ = strconv.Atoi(pageSizeStr)
+	pageIndexStr := ctx.Query("pageIndex")
+	pageIndex, _ = strconv.Atoi(pageIndexStr)
+	return
 }
