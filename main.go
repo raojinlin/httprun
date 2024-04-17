@@ -1,45 +1,55 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	"log"
-	"os"
+	"strconv"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"github.com/raojinlin/httprun/models"
 	"github.com/raojinlin/httprun/services"
 	"github.com/raojinlin/httprun/types"
+	"github.com/raojinlin/httprun/utils"
 	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 func main() {
-	newLogger := logger.New(
-		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
-		logger.Config{
-			SlowThreshold:             time.Second, // Slow SQL threshold
-			LogLevel:                  logger.Info, // Log level
-			IgnoreRecordNotFoundError: true,        // Ignore ErrRecordNotFound error for logger
-			ParameterizedQueries:      true,        // Don't include params in the SQL log
-			Colorful:                  false,       // Disable color
-		},
-	)
-	db, err := gorm.Open(sqlite.Open("./test.db"), &gorm.Config{Logger: newLogger})
-	if err != nil {
-		panic(err)
-	}
-
-	err = db.AutoMigrate(&models.Command{})
+	godotenv.Load()
+	db, err := utils.NewDB(sqlite.Open("./httprun.db"))
 	if err != nil {
 		panic(err)
 	}
 
 	cmdService := services.NewCommandService(db)
+	accesslogService := services.NewAccessLogService(db)
+
 	router := gin.Default()
-	router.POST("/api/run/*path", func(ctx *gin.Context) {
+	runGroup := router.Group("/api/run")
+	runGroup.Use(utils.JwtMiddleware(db, false))
+	runGroup.GET("/commands", func(ctx *gin.Context) {
+		jwtService := services.NewJWTService(db)
+		jwtToken := ctx.Request.Header.Get("x-token")
+		permissionCommands, err := jwtService.GetGrantCommands(jwtToken)
+		if err != nil {
+			ctx.AbortWithError(403, err)
+			return
+		}
+
+		result, err := cmdService.ListCommands(permissionCommands...)
+		if err != nil {
+			ctx.AbortWithError(500, err)
+			return
+		}
+		ctx.JSON(200, result)
+	})
+
+	runGroup.GET("/valid", func(ctx *gin.Context) {
+		ctx.JSON(200, gin.H{"ok": true})
+	})
+
+	runGroup.POST("/*path", func(ctx *gin.Context) {
 		var request types.RunCommandRequest
 		err := ctx.BindJSON(&request)
 		if err != nil {
@@ -47,11 +57,35 @@ func main() {
 			return
 		}
 
+		jwtToken := ctx.Request.Header.Get("x-token")
+		jwtService := services.NewJWTService(db)
+		permissionCommands, err := jwtService.GetGrantCommands(jwtToken)
+		if err != nil {
+			ctx.AbortWithError(403, err)
+			return
+		}
+
+		commandPermissionGranted := false
+		for _, command := range permissionCommands {
+			if command == request.Name {
+				commandPermissionGranted = true
+			}
+		}
+
+		if !commandPermissionGranted {
+			ctx.AbortWithError(403, fmt.Errorf("permission denied"))
+			return
+		}
+
 		response := cmdService.RunCommand(&request)
+		reqJson, _ := json.Marshal(request)
+		resJson, _ := json.Marshal(response)
+		utils.RecordAccessLog(accesslogService, ctx, string(reqJson), string(resJson))
 		ctx.JSON(200, response)
 	})
 
 	adminGroup := router.Group("/api/admin")
+	adminGroup.Use(utils.JwtMiddleware(db, true))
 	{
 		adminGroup.POST("/command", func(ctx *gin.Context) {
 			var cmd types.CreateCommandRequest
@@ -66,6 +100,9 @@ func main() {
 				return
 			}
 
+			reqJson, _ := json.Marshal(cmd)
+			resJson, _ := json.Marshal(result)
+			utils.RecordAccessLog(accesslogService, ctx, string(reqJson), string(resJson))
 			ctx.JSON(200, result)
 		})
 
@@ -76,6 +113,8 @@ func main() {
 				return
 			}
 
+			cmdListJson, _ := json.Marshal(commands)
+			utils.RecordAccessLog(accesslogService, ctx, "", string(cmdListJson))
 			ctx.JSON(200, commands)
 		})
 
@@ -86,6 +125,8 @@ func main() {
 				return
 			}
 
+			reqJson, _ := json.Marshal(req)
+			utils.RecordAccessLog(accesslogService, ctx, string(reqJson), "")
 			cmdService.UpdateCommandsStatus(req.Status, req.Commands...)
 			ctx.JSON(200, gin.H{"success": true})
 		})
@@ -96,8 +137,71 @@ func main() {
 				ctx.AbortWithError(400, fmt.Errorf("name required"))
 				return
 			}
+			utils.RecordAccessLog(accesslogService, ctx, name, "")
 			cmdService.DeleteCommands(strings.Split(name, " ")...)
 			ctx.JSON(200, gin.H{})
+		})
+
+		tokenService := services.NewJWTService(db)
+		adminGroup.GET("/tokens", func(ctx *gin.Context) {
+			pageIndex, pageSize := utils.ParsePage(ctx)
+			ctx.JSON(200, tokenService.List(pageIndex, pageSize))
+		})
+
+		adminGroup.POST("/token", func(ctx *gin.Context) {
+			var req types.CreateTokenRequest
+			if err := ctx.ShouldBindJSON(&req); err != nil {
+				ctx.AbortWithError(400, err)
+				return
+			}
+
+			token := &models.Token{
+				Subject:   req.Subject,
+				Name:      req.Name,
+				IssueAt:   req.IssueAt,
+				ExpiresAt: req.ExiresAt,
+				IsAdmiin:  false,
+			}
+			err = tokenService.AddToken(token)
+
+			if err != nil {
+				ctx.AbortWithError(500, err)
+				return
+			}
+
+			ctx.JSON(200, types.CreateTokenResponse{Token: token.JwtToken})
+		})
+
+		adminGroup.DELETE("/token/:tokenId", func(ctx *gin.Context) {
+			tokenId, _ := ctx.Params.Get("tokenId")
+			if tokenId == "" {
+				ctx.AbortWithStatus(400)
+				return
+			}
+
+			id, err := strconv.Atoi(tokenId)
+			if err != nil {
+				ctx.AbortWithError(400, err)
+				return
+			}
+
+			err = tokenService.Delete(uint64(id))
+			if err != nil {
+				ctx.AbortWithError(400, err)
+				return
+			}
+
+			ctx.JSON(200, gin.H{"id": id})
+		})
+
+		adminGroup.GET("/accesslog", func(ctx *gin.Context) {
+			pageIndex, pageSize := utils.ParsePage(ctx)
+			if err != nil {
+				ctx.AbortWithError(400, err)
+				return
+			}
+
+			ctx.JSON(200, accesslogService.List(pageIndex, pageSize))
 		})
 	}
 

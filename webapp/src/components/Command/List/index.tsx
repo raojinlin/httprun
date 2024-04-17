@@ -17,11 +17,17 @@ const CommandList: React.FC<CommandListProps> = ({ admin }) => {
 
     const refresh = React.useCallback(() => {
         setLoading(true);
+        if (!admin) {
+            commandService.getUserCommandList().then(items => {
+                setItems(items);
+                setLoading(false);
+            });
+        }
         commandService.getCommandList().then(items => {
             setItems(items);
             setLoading(false);
         });
-    }, []);
+    }, [admin]);
 
     React.useEffect(() => {
         refresh();

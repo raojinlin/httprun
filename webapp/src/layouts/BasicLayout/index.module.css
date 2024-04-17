@@ -13,3 +13,12 @@
     background-color: #fff;
     padding: 0;
 }
+
+.nav a {
+    margin-right: 15px;
+}
+
+.nav .activeNav {
+    color: #333;
+    text-decoration: underline;
+}
