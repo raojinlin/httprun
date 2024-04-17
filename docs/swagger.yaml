@@ -1,0 +1,385 @@
+basePath: /api
+definitions:
+  command.Command:
+    properties:
+      command:
+        type: string
+      env:
+        items:
+          $ref: '#/definitions/command.Env'
+        type: array
+      params:
+        items:
+          $ref: '#/definitions/command.ParamDefine'
+        type: array
+    type: object
+  command.Env:
+    properties:
+      name:
+        type: string
+      value:
+        type: string
+    type: object
+  command.Param:
+    properties:
+      name:
+        type: string
+      value: {}
+    type: object
+  command.ParamDefine:
+    properties:
+      defaultValue: {}
+      description:
+        type: string
+      name:
+        type: string
+      required:
+        type: boolean
+      type:
+        type: string
+    type: object
+  models.AccessLog:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      ip:
+        type: string
+      path:
+        type: string
+      request:
+        type: string
+      response:
+        type: string
+      token_id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.Command:
+    properties:
+      command:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      path:
+        type: string
+      status:
+        $ref: '#/definitions/models.CommandStatus'
+      updated_at:
+        type: string
+    type: object
+  models.CommandStatus:
+    enum:
+    - 0
+    - 1
+    type: integer
+    x-enum-varnames:
+    - CommandStatusActive
+    - CommandStatusInactive
+  models.Token:
+    properties:
+      created_at:
+        type: string
+      expires_at:
+        type: integer
+      id:
+        type: integer
+      is_admiin:
+        type: boolean
+      issue_at:
+        type: integer
+      jwt_token:
+        type: string
+      name:
+        type: string
+      subject:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  types.CommandResponse:
+    properties:
+      error:
+        type: string
+      stderr:
+        type: string
+      stdout:
+        type: string
+    type: object
+  types.CreateCommandRequest:
+    properties:
+      command:
+        $ref: '#/definitions/command.Command'
+      description:
+        type: string
+      name:
+        type: string
+      path:
+        type: string
+      status:
+        $ref: '#/definitions/models.CommandStatus'
+    type: object
+  types.CreateTokenRequest:
+    properties:
+      expires_at:
+        type: integer
+      issue_at:
+        type: integer
+      name:
+        type: string
+      subject:
+        type: string
+    type: object
+  types.RunCommandRequest:
+    properties:
+      env:
+        items:
+          $ref: '#/definitions/command.Env'
+        type: array
+      name:
+        type: string
+      params:
+        items:
+          $ref: '#/definitions/command.Param'
+        type: array
+    type: object
+  types.UpdateCommandRequest:
+    properties:
+      commands:
+        items:
+          type: string
+        type: array
+      status:
+        $ref: '#/definitions/models.CommandStatus'
+    type: object
+host: localhost:8081
+info:
+  contact: {}
+  description: API for managing commands, tokens, and access logs
+  title: httprun API
+  version: "1.0"
+paths:
+  /admin/accesslog:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of access logs
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.AccessLog'
+            type: array
+      summary: Get a list of access logs
+      tags:
+      - access logs
+  /admin/command:
+    post:
+      consumes:
+      - application/json
+      description: Create a new command
+      parameters:
+      - description: Command object to be created
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/types.CreateCommandRequest'
+      produces:
+      - application/json
+      responses: {}
+      summary: Create a new command
+      tags:
+      - commands
+  /admin/commands:
+    delete:
+      consumes:
+      - application/json
+      description: Delete one or more commands by name
+      parameters:
+      - description: Name(s) of the command(s) to delete, separated by spaces
+        in: query
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Delete one or more commands by name
+      tags:
+      - commands
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all commands
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of commands
+          schema:
+            items:
+              $ref: '#/definitions/models.Command'
+            type: array
+      summary: Get a list of all commands
+      tags:
+      - commands
+    put:
+      consumes:
+      - application/json
+      description: Update the status of one or more commands
+      parameters:
+      - description: Update command status request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/types.UpdateCommandRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      summary: Update the status of one or more commands
+      tags:
+      - commands
+  /admin/token:
+    post:
+      consumes:
+      - application/json
+      description: Create a new token
+      parameters:
+      - description: Token object to be created
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/types.CreateTokenRequest'
+      produces:
+      - application/json
+      responses: {}
+      summary: Create a new token
+      tags:
+      - tokens
+  /admin/token/{tokenId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a token by ID
+      parameters:
+      - description: Token ID to delete
+        in: path
+        name: tokenId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Delete a token by ID
+      tags:
+      - tokens
+  /admin/tokens:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of tokens
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Token'
+            type: array
+      summary: Get a list of tokens
+      tags:
+      - tokens
+  /run:
+    post:
+      consumes:
+      - application/json
+      description: Run a command if the user has permission
+      parameters:
+      - description: JWT token
+        in: header
+        name: x-token
+        required: true
+        type: string
+      - description: Command object to run
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/types.RunCommandRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Command executed successfully
+          schema:
+            $ref: '#/definitions/types.CommandResponse'
+      summary: Run a command
+      tags:
+      - commands
+  /run/commands:
+    get:
+      consumes:
+      - application/json
+      description: Lists commands that the user has permission to run
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Command'
+            type: array
+        "403":
+          description: Permission denied
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: List commands
+      tags:
+      - commands
+swagger: "2.0"
