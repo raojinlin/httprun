@@ -27,16 +27,16 @@ func NewUserController(db *gorm.DB) *UserController {
 	}
 }
 
-//	@Summary		List commands
-//	@Description	Lists commands that the user has permission to run
-//	@Tags			commands
-//	@Security		JwtAuth
-//	@Accept			json
-//	@Produce		json
-//	@Success		200	{array}		models.Command
-//	@Failure		403	{string}	string	"Permission denied"
-//	@Failure		500	{string}	string	"Internal server error"
-//	@Router			/run/commands [get]
+// @Summary		List commands
+// @Description	Lists commands that the user has permission to run
+// @Tags			commands
+// @Security		JwtAuth
+// @Accept			json
+// @Produce		json
+// @Success		200	{array}		models.Command
+// @Failure		403	{string}	string	"Permission denied"
+// @Failure		500	{string}	string	"Internal server error"
+// @Router			/run/commands [get]
 func (c *UserController) GetCommandList(ctx *gin.Context) {
 	jwtToken := ctx.Request.Header.Get("x-token")
 	permissionCommands, err := c.jwtService.GetGrantCommands(jwtToken)
@@ -57,15 +57,15 @@ func (c *UserController) Valid(ctx *gin.Context) {
 	ctx.JSON(200, gin.H{"ok": true})
 }
 
-//	@Summary		Run a command
-//	@Description	Run a command if the user has permission
-//	@Tags			commands
-//	@Accept			json
-//	@Produce		json
-//	@Param			x-token	header		string					true	"JWT token"
-//	@Param			body	body		types.RunCommandRequest	true	"Command object to run"
-//	@Success		200		{object}	types.CommandResponse	"Command executed successfully"
-//	@Router			/run [post]
+// @Summary		Run a command
+// @Description	Run a command if the user has permission
+// @Tags			commands
+// @Accept			json
+// @Produce		json
+// @Param			x-token	header		string					true	"JWT token"
+// @Param			body	body		types.RunCommandRequest	true	"Command object to run"
+// @Success		200		{object}	types.CommandResponse	"Command executed successfully"
+// @Router			/run [post]
 func (c *UserController) Run(ctx *gin.Context) {
 	var request types.RunCommandRequest
 	err := ctx.BindJSON(&request)
@@ -75,22 +75,24 @@ func (c *UserController) Run(ctx *gin.Context) {
 	}
 
 	jwtToken := ctx.Request.Header.Get("x-token")
-	permissionCommands, err := c.jwtService.GetGrantCommands(jwtToken)
-	if err != nil {
-		ctx.AbortWithError(403, err)
-		return
-	}
-
-	commandPermissionGranted := false
-	for _, command := range permissionCommands {
-		if command == request.Name {
-			commandPermissionGranted = true
+	if isAdmin, _ := c.jwtService.IsAdmin(jwtToken); !isAdmin {
+		permissionCommands, err := c.jwtService.GetGrantCommands(jwtToken)
+		if err != nil {
+			ctx.AbortWithError(403, err)
+			return
 		}
-	}
 
-	if !commandPermissionGranted {
-		ctx.AbortWithError(403, fmt.Errorf("permission denied"))
-		return
+		commandPermissionGranted := false
+		for _, command := range permissionCommands {
+			if command == request.Name {
+				commandPermissionGranted = true
+			}
+		}
+
+		if !commandPermissionGranted {
+			ctx.AbortWithError(403, fmt.Errorf("permission denied"))
+			return
+		}
 	}
 
 	response := c.cmdService.RunCommand(&request)
