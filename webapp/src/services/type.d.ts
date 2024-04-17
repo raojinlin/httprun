@@ -65,7 +65,7 @@ export type AccessLogListResponse = {
 export type Token = {
     id: number;
     jwt_token: string;
-    issuse_at: number;
+    issue_at: number;
     expires_at: number;
     subject: string;
     name: string;
@@ -83,4 +83,8 @@ export type CreateTokenRequest = {
     expires_at: number;
     subject: string;
     name: string;
+}
+
+export type CreateTokenResponse = {
+    token: string;
 }

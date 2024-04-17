@@ -2,13 +2,15 @@ package services
 
 import (
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/raojinlin/httprun/models"
 	"gorm.io/gorm"
 )
 
-var jwtSecret = []byte("XqWwD8O7j8mZaFEPhOyKDfY2pCOJTiRuvG5pVI8oUmM9BtObZrmyluJWAPyQam9UYGwE1dYikE9oR4GBkc6ls4SdkqS8C5t3")
+var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
 
 type JWTService struct {
 	db *gorm.DB
@@ -27,6 +29,7 @@ func (s *JWTService) GenerateJWT(item *models.Token) (string, error) {
 
 	claims["sub"] = item.Subject
 	claims["name"] = item.Name
+	claims["admin"] = item.IsAdmiin
 
 	tokenString, err := token.SignedString(jwtSecret)
 	if err != nil {
@@ -45,6 +48,26 @@ func (s *JWTService) ParseJWT(tokenString string) (*jwt.Token, error) {
 	}
 
 	return token, nil
+}
+
+func (s *JWTService) GetGrantCommands(tokenString string) ([]string, error) {
+	token, err := s.ParseJWT(tokenString)
+	if err != nil {
+		return nil, err
+	}
+
+	claims := token.Claims.(jwt.MapClaims)
+	return strings.Split(claims["sub"].(string), ","), nil
+}
+
+func (s *JWTService) IsAdmin(tokenString string) (bool, error) {
+	token, err := s.ParseJWT(tokenString)
+	if err != nil {
+		return false, err
+	}
+
+	claims := token.Claims.(jwt.MapClaims)
+	return claims["admin"].(bool), nil
 }
 
 func (s *JWTService) AddToken(token *models.Token) error {
@@ -75,7 +98,7 @@ func (s *JWTService) Verify(tokenStr string) error {
 
 func (s *JWTService) List(pageIndex int, pageSize int) *models.TokenListResponse {
 	var result []models.Token
-	s.db.Model(&models.Token{}).Limit(pageSize).Offset((pageIndex - 1) * pageSize).Find(&result)
+	s.db.Model(&models.Token{}).Limit(pageSize).Order("created_at desc").Offset((pageIndex - 1) * pageSize).Find(&result)
 	var total int64
 	s.db.Model(&models.Token{}).Count(&total)
 	return &models.TokenListResponse{Items: result, Total: total}

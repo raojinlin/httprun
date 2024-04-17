@@ -1,17 +1,20 @@
-import { Button, List } from "antd";
+import { Button, Dropdown, List } from "antd";
 import React from "react";
+import dayjs from 'dayjs';
 import commandService from "../../../services/command";
+import './index.module.css';
+import AddTokenModal from "./AddTokenModal";
 
 import { TokenListResponse } from "../../../services/type";
-import { PlusOutlined } from "@ant-design/icons";
-import AddTokenModal from "./AddTokenModal";
+import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 
 const TokenList: React.FC = () => {
     const [tokenList, setTokenList] = React.useState<TokenListResponse>();
     const [loading, setLoading] = React.useState<boolean>(false);
     const [page, setPage] = React.useState({ pageIndex: 1, pageSize: 10 });
+    const [showAddTokenModal, setShowAddTokenModal] = React.useState(false);
 
-    React.useEffect(() => {
+    const refresh = React.useCallback(() => {
         setLoading(true);
         commandService.getTokenList(page.pageIndex, page.pageSize).then(tokenList => {
             setTokenList(tokenList);
@@ -19,11 +22,20 @@ const TokenList: React.FC = () => {
         });
     }, [page, setLoading]);
 
+    React.useEffect(() => {
+        refresh(); 
+    }, [refresh]);
+
     return (
         <>
-            <AddTokenModal />
+            <AddTokenModal open={showAddTokenModal} onOpenChange={setShowAddTokenModal} onChange={refresh} />
             <List
-                header={(<div style={{ display: 'flex' }}><div style={{ flex: '1' }}>Token管理</div><div><Button><PlusOutlined />添加Token</Button></div></div>)}
+                header={(
+                    <div style={{ display: 'flex' }}>
+                        <div style={{ flex: '1' }}>Token管理</div>
+                        <div><Button onClick={() => setShowAddTokenModal(true)}><PlusOutlined />添加Token</Button></div>
+                    </div>
+                )}
                 dataSource={tokenList?.items}
                 loading={loading}
                 pagination={{
@@ -33,14 +45,20 @@ const TokenList: React.FC = () => {
                 }}
                 renderItem={item => {
                     return (
-                        <List.Item>
+                        <List.Item 
+                            actions={[
+                                <Dropdown trigger={['click']} menu={{items: [{label: 'Delete', key: 'delete'}]}}>
+                                    <Button type="link" style={{alignSelf: 'baseline'}}><DeleteOutlined />刪除</Button>
+                                </Dropdown>
+                            ]}
+                        >
                             <div>
                                 <p>ID: {item.id}</p>
                                 <p>Token: {item.jwt_token}</p>
                                 <p>Name: {item.name}</p>
                                 <p>Subject: {item.subject}</p>
-                                <p>IssuseAt: {item.issuse_at}</p>
-                                <p>ExpiresAt: {item.expires_at}</p>
+                                <p>IssuseAt: {dayjs(item.issue_at*1000).format('YYYY-MM-DD HH:mm:ss')}</p>
+                                <p>ExpiresAt: {dayjs(item.expires_at*1000).format('YYYY-MM-DD HH:mm:ss')}</p>
                             </div>
                         </List.Item>
                     )

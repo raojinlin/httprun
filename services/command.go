@@ -40,9 +40,14 @@ func (s *CommandService) CreateCommand(cmd *types.CreateCommandRequest) (*types.
 	return &types.CreateCommandResponse{Id: model.ID}, nil
 }
 
-func (s *CommandService) ListCommands() ([]types.ListCommandsResponse, error) {
+func (s *CommandService) ListCommands(name ...string) ([]types.ListCommandsResponse, error) {
 	var commands []models.Command
-	s.db.Find(&commands)
+	db := s.db
+	if len(name) > 0 {
+		db = s.db.Where("name in (?)", name)
+	}
+
+	db.Find(&commands)
 	result := make([]types.ListCommandsResponse, 0)
 	for _, cmd := range commands {
 		var comm command.Command

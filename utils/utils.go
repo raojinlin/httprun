@@ -29,12 +29,12 @@ func AutoMigrate(db *gorm.DB) (err error) {
 	return
 }
 
-func JwtMiddleware(db *gorm.DB) func(ctx *gin.Context) {
+func JwtMiddleware(db *gorm.DB, checkAdmin bool) func(ctx *gin.Context) {
 	jwtService := services.NewJWTService(db)
 	return func(ctx *gin.Context) {
 		jwtToken := ctx.Request.Header.Get("x-token")
 		if jwtToken == "" {
-			ctx.AbortWithError(403, fmt.Errorf("missing token"))
+			ctx.AbortWithError(403, fmt.Errorf("token required"))
 			return
 		}
 
@@ -44,6 +44,12 @@ func JwtMiddleware(db *gorm.DB) func(ctx *gin.Context) {
 			return
 		}
 
+		if checkAdmin {
+			if ok, _ := jwtService.IsAdmin(jwtToken); !ok {
+				ctx.AbortWithError(403, fmt.Errorf("administration permission required"))
+				return
+			}
+		}
 		ctx.Next()
 	}
 }

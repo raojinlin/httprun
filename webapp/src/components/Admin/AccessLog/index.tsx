@@ -1,4 +1,5 @@
 import React from "react";
+import dayjs from 'dayjs';
 import { AccessLogListResponse } from "../../../services/type";
 import commandService from "../../../services/command";
 import { List } from "antd";
@@ -32,7 +33,7 @@ const AccessLog: React.FC = (props) => {
                             <p>Token: {item.token_id}</p>
                             <p>Request: {item.request}</p>
                             <p>Response: {item.response}</p>
-                            <p>Time: {item.created_at}</p>
+                            <p>Time: {dayjs(item.created_at).format('YYYY-MM-DD HH:mm:ss')}</p>
                         </div>
                     </List.Item>
                 )

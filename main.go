@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"github.com/raojinlin/httprun/models"
 	"github.com/raojinlin/httprun/services"
 	"github.com/raojinlin/httprun/types"
@@ -15,6 +16,7 @@ import (
 )
 
 func main() {
+	godotenv.Load()
 	db, err := utils.NewDB(sqlite.Open("./httprun.db"))
 	if err != nil {
 		panic(err)
@@ -25,12 +27,53 @@ func main() {
 
 	router := gin.Default()
 	runGroup := router.Group("/api/run")
-	runGroup.Use(utils.JwtMiddleware(db))
+	runGroup.Use(utils.JwtMiddleware(db, false))
+	runGroup.GET("/commands", func(ctx *gin.Context) {
+		jwtService := services.NewJWTService(db)
+		jwtToken := ctx.Request.Header.Get("x-token")
+		permissionCommands, err := jwtService.GetGrantCommands(jwtToken)
+		if err != nil {
+			ctx.AbortWithError(403, err)
+			return
+		}
+
+		result, err := cmdService.ListCommands(permissionCommands...)
+		if err != nil {
+			ctx.AbortWithError(500, err)
+			return
+		}
+		ctx.JSON(200, result)
+	})
+
+	runGroup.GET("/valid", func(ctx *gin.Context) {
+		ctx.JSON(200, gin.H{"ok": true})
+	})
+
 	runGroup.POST("/*path", func(ctx *gin.Context) {
 		var request types.RunCommandRequest
 		err := ctx.BindJSON(&request)
 		if err != nil {
 			ctx.AbortWithError(400, err)
+			return
+		}
+
+		jwtToken := ctx.Request.Header.Get("x-token")
+		jwtService := services.NewJWTService(db)
+		permissionCommands, err := jwtService.GetGrantCommands(jwtToken)
+		if err != nil {
+			ctx.AbortWithError(403, err)
+			return
+		}
+
+		commandPermissionGranted := false
+		for _, command := range permissionCommands {
+			if command == request.Name {
+				commandPermissionGranted = true
+			}
+		}
+
+		if !commandPermissionGranted {
+			ctx.AbortWithError(403, fmt.Errorf("permission denied"))
 			return
 		}
 
@@ -42,6 +85,7 @@ func main() {
 	})
 
 	adminGroup := router.Group("/api/admin")
+	adminGroup.Use(utils.JwtMiddleware(db, true))
 	{
 		adminGroup.POST("/command", func(ctx *gin.Context) {
 			var cmd types.CreateCommandRequest
@@ -116,6 +160,7 @@ func main() {
 				Name:      req.Name,
 				IssueAt:   req.IssueAt,
 				ExpiresAt: req.ExiresAt,
+				IsAdmiin:  false,
 			}
 			err = tokenService.AddToken(token)
 
