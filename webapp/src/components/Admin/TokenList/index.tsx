@@ -1,4 +1,4 @@
-import { Button, Dropdown, List } from "antd";
+import { Button, Dropdown, List, message } from "antd";
 import React from "react";
 import dayjs from 'dayjs';
 import commandService from "../../../services/command";
@@ -26,6 +26,14 @@ const TokenList: React.FC = () => {
         refresh(); 
     }, [refresh]);
 
+    const handleDelete = React.useCallback((id: number) => {
+        message.loading(true);
+        commandService.deleteToken(id).then(r => {
+            message.destroy();
+            refresh();
+        })
+    }, [refresh]);
+
     return (
         <>
             <AddTokenModal open={showAddTokenModal} onOpenChange={setShowAddTokenModal} onChange={refresh} />
@@ -47,7 +55,7 @@ const TokenList: React.FC = () => {
                     return (
                         <List.Item 
                             actions={[
-                                <Dropdown trigger={['click']} menu={{items: [{label: 'Delete', key: 'delete'}]}}>
+                                <Dropdown trigger={['click']} menu={{items: [{label: '确认刪除', key: 'delete', onClick: () => handleDelete(item.id)}]}}>
                                     <Button type="link" style={{alignSelf: 'baseline'}}><DeleteOutlined />刪除</Button>
                                 </Dropdown>
                             ]}

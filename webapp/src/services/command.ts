@@ -88,7 +88,7 @@ export class CommandService {
     }
 
     async deleteToken(id: number): Promise<{id: number}> {
-        const res = await this.fetch(`/api/admin/tokens?id=${id}`, {method: 'DELETE'})
+        const res = await this.fetch(`/api/admin/token/${id}`, {method: 'DELETE'})
         return await res.json();
     }
 
