@@ -105,6 +105,24 @@ definitions:
       updated_at:
         type: string
     type: object
+  models.TokenListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/models.Token'
+        type: array
+      total:
+        type: integer
+    type: object
+  types.AccessLogResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/models.AccessLog'
+        type: array
+      total:
+        type: integer
+    type: object
   types.CommandResponse:
     properties:
       error:
@@ -187,9 +205,7 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/models.AccessLog'
-            type: array
+            $ref: '#/definitions/types.AccessLogResponse'
       summary: Get a list of access logs
       tags:
       - access logs
@@ -322,9 +338,7 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/models.Token'
-            type: array
+            $ref: '#/definitions/models.TokenListResponse'
       summary: Get a list of tokens
       tags:
       - tokens
