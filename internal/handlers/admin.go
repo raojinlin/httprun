@@ -123,7 +123,7 @@ func (c *AdminController) DeleteCommand(ctx *gin.Context) {
 //	@Produce		json
 //	@Param			page	query		integer	false	"Page number"
 //	@Param			size	query		integer	false	"Page size"
-//	@Success		200		{object}	[]models.Token
+//	@Success		200		{object}	models.TokenListResponse
 //	@Router			/admin/tokens [get]
 func (c *AdminController) GetTokenList(ctx *gin.Context) {
 	pageIndex, pageSize := utils.ParsePage(ctx)
@@ -196,7 +196,7 @@ func (c *AdminController) DeleteToken(ctx *gin.Context) {
 //	@Produce		json
 //	@Param			page	query		integer	false	"Page number"
 //	@Param			size	query		integer	false	"Page size"
-//	@Success		200		{object}	[]models.AccessLog
+//	@Success		200		{object}	types.AccessLogResponse
 //	@Router			/admin/accesslog [get]
 func (c *AdminController) GetAccessLogList(ctx *gin.Context) {
 	pageIndex, pageSize := utils.ParsePage(ctx)
