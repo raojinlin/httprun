@@ -64,17 +64,20 @@ func RecordAccessLog(service *services.AccessLogService, ctx *gin.Context, req s
 	})
 }
 
-func NewDB(dialector gorm.Dialector) (*gorm.DB, error) {
-	newLogger := logger.New(
-		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
-		logger.Config{
-			SlowThreshold:             time.Second, // Slow SQL threshold
-			LogLevel:                  logger.Info, // Log level
-			IgnoreRecordNotFoundError: true,        // Ignore ErrRecordNotFound error for logger
-			ParameterizedQueries:      true,        // Don't include params in the SQL log
-			Colorful:                  false,       // Disable color
-		},
-	)
+func NewDB(dialector gorm.Dialector, showLog bool) (*gorm.DB, error) {
+	var newLogger logger.Interface
+	if showLog {
+		newLogger = logger.New(
+			log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
+			logger.Config{
+				SlowThreshold:             time.Second, // Slow SQL threshold
+				LogLevel:                  logger.Info, // Log level
+				IgnoreRecordNotFoundError: true,        // Ignore ErrRecordNotFound error for logger
+				ParameterizedQueries:      true,        // Don't include params in the SQL log
+				Colorful:                  false,       // Disable color
+			},
+		)
+	}
 
 	db, err := gorm.Open(dialector, &gorm.Config{Logger: newLogger})
 	if err != nil {
