@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	_ "github.com/raojinlin/httprun/docs"
@@ -18,12 +20,21 @@ import (
 // @BasePath		/api
 func main() {
 	godotenv.Load()
-	db, err := utils.NewDB(sqlite.Open("./httprun.db"))
+	db, err := utils.NewDB(sqlite.Open("./httprun.db"), true)
 	if err != nil {
 		panic(err)
 	}
 
 	router := gin.Default()
+	webappBuildDir := os.Getenv("WEBAPP_BUILD_DIR")
+	if webappBuildDir != "" {
+		router.Static("/static", webappBuildDir+"/static")
+		// Serve the index file for all routes not starting with /api or /static or /swagger
+		router.NoRoute(func(ctx *gin.Context) {
+			ctx.File(webappBuildDir + "/index.html")
+		})
+	}
+
 	userGroup := router.Group("/api/run")
 	userGroup.Use(utils.JwtMiddleware(db, false))
 

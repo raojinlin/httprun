@@ -13,7 +13,7 @@ import (
 
 func main() {
 	godotenv.Load()
-	db, err := utils.NewDB(sqlite.Open("./httprun.db"))
+	db, err := utils.NewDB(sqlite.Open("./httprun.db"), false)
 	if err != nil {
 		panic(err)
 	}
